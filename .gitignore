@@ -1,0 +1,66 @@
+# Visual Studio
+.vs/
+*.vcxproj.user
+*.vcxproj.filters
+*.suo
+*.user
+*.userosscache
+*.VC.db
+*.VC.opendb
+*.ipch
+*.pdb
+*.aps
+*.ncb
+*.opendb
+*.opensdf
+*.sdf
+
+# CMake
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+CTestTestfile.cmake
+install_manifest.txt
+CompileFlags.txt
+build*/
+cmake-build-*/
+compile_commands.json
+
+# Ninja
+.ninja_deps
+.ninja_log
+
+# Build outputs
+build/
+out/
+bin/
+lib/
+lib64/
+obj/
+*.o
+*.obj
+*.lo
+*.slo
+*.a
+*.lib
+*.so
+*.dylib
+*.dll
+*.exe
+
+# Logs
+*.log
+
+# IDEs
+.vscode/
+.idea/
+
+# OS files
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Temporary
+*~
+*.swp
+*.tmp
