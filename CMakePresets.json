@@ -75,5 +75,28 @@
         "CMAKE_PROJECT_TOP_LEVEL_INCLUDES": "$env{VSINSTALLDIR}Common7/IDE/CommonExtensions/Microsoft/CMake/cmake/Microsoft/SegmentHeap.cmake"
       }
     }
+  ],
+  "buildPresets": [
+    {
+      "name": "x64-debug-build",
+      "displayName": "Build x64 Debug (LLVM-Frontend)",
+      "configurePreset": "x64-debug",
+      "description": "Build preset that targets the LLVM-Frontend executable",
+      "targets": [ "LLVM-Frontend" ]
+    },
+    {
+      "name": "x64-release-build",
+      "displayName": "Build x64 Release (LLVM-Frontend)",
+      "configurePreset": "x64-release",
+      "description": "Build preset that targets the LLVM-Frontend executable",
+      "targets": [ "LLVM-Frontend" ]
+    },
+    {
+      "name": "x64-relwithdebinfo-build",
+      "displayName": "Build x64 RelWithDebInfo (LLVM-Frontend)",
+      "configurePreset": "x64-relwithdebinfo",
+      "description": "Build preset that targets the LLVM-Frontend executable",
+      "targets": [ "LLVM-Frontend" ]
+    }
   ]
 }
