@@ -74,7 +74,7 @@ inline int gettok() {
 class ExprAST {
 public:
     virtual ~ExprAST() = default;
-    virtual Value* codegen() = 0;
+    virtual Value *codegen() = 0;
 };
 // Literals expression class
 class NumberExprAST : public ExprAST {
@@ -122,7 +122,6 @@ public:
 
 class PrototypeAST : public ExprAST {
     const std::string name;
-    const std::vector<std::string> Args; // Initialize with no value b
 public:
     PrototypeAST(const std::string& name, std::vector<std::string> Args)
         : name(name), Args(std::move(Args)) {
@@ -182,8 +181,26 @@ static std::unique_ptr<ExprAST> ParseExpression();
 static std::unique_ptr<ExprAST> ParsePrimary();
 static std::unique_ptr<ExprAST> LogError(const char* Str);
 static std::unique_ptr<ExprAST> ParseIdentifierExpr();
-
 static std::unique_ptr<ExprAST> ParseNumberExpr() {
+
+
+ static std::unique_ptr<ExprAST> ParseExpression() {
+        return ParsePrimary();
+ 
+ 
+ 
+ 
+ 
+ }
+
+
+
+
+
+
+
+
+
     auto Result = std::make_unique<NumberExprAST>(NumVal);
     getNextToken();
     return std::move(Result);
@@ -255,9 +272,6 @@ static std::unique_ptr<ExprAST> ParseIdentifierExpr() {
     return std::make_unique<FunctionExprAST>(IdName, std::move(Args));
 }
 
-static std::unique_ptr<ExprAST> ParseExpression() {
-    return ParsePrimary();
-}
 
 
 static std::unique_ptr<ExprAST> ParseBinOpRHS(const int ExprPrec, std::unique_ptr<ExprAST> LHS) {
@@ -277,22 +291,19 @@ static std::unique_ptr<ExprAST> ParseBinOpRHS(const int ExprPrec, std::unique_pt
 
     }
 
+}
 
 
 
-
-    /*
-    FunctionExprAST(const std::string &Calee,
-        std::vector<std::unique_ptr<ExprAST>> Args)
-            : Calee (Calee), Args(std::move(Args)) {
-    */
+   
+    
     std::unique_ptr<ExprAST> LogErrorP(const char* Str) {
         LogError(Str);
         return nullptr;
     }
 
     static std::unique_ptr<LLVMContext> TheContext;
-    static std::unique_ptr<IRBuilder> Builder;
+    static std::unique_ptr<IRBuilder<>> Builder; // <- "keeps track of the current insertion point (the active llvm::BasicBlock and an iterator position within it)."
     static std::unique_ptr<Module> TheModule;
     static std::map<std::string, Value*> NamedValues;
 
@@ -320,20 +331,20 @@ static std::unique_ptr<ExprAST> ParseBinOpRHS(const int ExprPrec, std::unique_pt
         }
         Switch(Op) {
     case '+':
-        return Builder->CreateFAdd(L, R, "addtmp")
+        return Builder->CreateFAdd(L, R, "addtmp");
     case '-':
-        return Builder->CreateFSub(L, R, "addtmp")
+        return Builder->CreateFSub(L, R, "addtmp");
     case '*':
-        return Builder->CreateFMul(L, R, "addtmp")
+        return Builder->CreateFMul(L, R, "addtmp");
     case '<':
         L = Builder->CreateFCmpULT(L, R, "cmptmp");
         return Builder->CreateUIToFP(L, Type::getDoubleTy(*TheContext), "booltmp");
     default:
         return LogErrorV("Invalid binary operator");
 
-        }
+        };
 
-    }
+    };
     Value* CallExprAST::codegen() {
         Function* CalleeF = TheModule->getFunction(Callee);
         if (!CalleeF) {
@@ -352,19 +363,10 @@ static std::unique_ptr<ExprAST> ParseBinOpRHS(const int ExprPrec, std::unique_pt
             return Builder->CreateCall(CalleeF, ArgsV, "calltmp");
         }
     }
-
-    Function* PrototypeAST::codegen() {
-        std::vector<Type*> Doubles(Args.size()),
-            Type::getDoublety(*TheContext);
-        FunctionType* FT =
-            FunctionType::get(Type::getDoublety(*TheContext), Doubles, false);
-
-        Function* F =
-            Function::Create(FT, Funtion::ExternalLinkage, Name, TheModule::get());
-    }
     unsigned Idx = 0;
-    for (auto& Arg : F->args())
+    for (auto& Arg : args()<-F )
         Arg.setName(Args[Idx++]);
+
     return F;
 
 

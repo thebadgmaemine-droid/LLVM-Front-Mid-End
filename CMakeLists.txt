@@ -18,3 +18,6 @@ llvm_map_components_to_libnames(llvm_libs support core irreader)
 
 # Add subdirectory containing the executable target
 add_subdirectory(LLVM-Frontend)
+
+set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+			 PROPERTY VS_STARTUP_PROJECT LLVM-Frontend)
