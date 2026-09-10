@@ -1,4 +1,5 @@
-﻿add_executable(LLVM-Frontend "main.cpp")
+﻿cmake_minimum_required(VERSION 4.2)
+add_executable(LLVM-Frontend "main.cpp")
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)
   set_property(TARGET LLVM-Frontend PROPERTY CXX_STANDARD 20)
