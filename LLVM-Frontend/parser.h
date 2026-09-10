@@ -1,14 +1,14 @@
 #pragma once
 #ifndef parser_H_
 #define parser_H_
-#endif // !parser_H_
-
+//-----------------------------BASE DEF-------------------------------//
 using llvm;
-
 static int Curtok; // Current token, parser and lexer looks at this
 static int getNextToken() {
-    return Curtok = gettok();  // Don't shadow value Curtok
+    return Curtok = gettok(); 
 }     // Goes to next token
+enum class Token {
+    tok_eof = -1, tok_def = -2, tok_extern = -3, tok_identifier = -4, tok_number = -5
 
 // Binop precedence : Holds the precedence for Binary values 
 static std::map<char, int> BinopPrecedence;
@@ -127,6 +127,9 @@ static std::unique_ptr<ExprAST> ParseBinOpRHS(const int ExprPrec, std::unique_pt
         : Calee(Calee), Args(std::move(Args)) {
     }
     std::unique_ptr<ExprAST> LogErrorP(const char* Str) {
-        LogError(Str);
+        LogError(Str); m
         return nullptr;
-    }
+    } 
+
+
+#endif

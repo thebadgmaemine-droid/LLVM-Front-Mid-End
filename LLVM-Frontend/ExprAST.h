@@ -1,6 +1,5 @@
 ﻿#ifndef EXPRAST_H_
 #define EXPRAST_H_
-
 #include <cctype>
 #include <cstdlib>
 #include <iostream>
@@ -21,24 +20,22 @@
 #include "llvm/IR/Module.h"
 #include "llvm/IR/Type.h"
 #include "llvm/IR/Verifier.h"
-
 using namespace llvm;
-
+static int Curtok; // Current token, parser and lexer looks at this
+static int getNextToken() {
+    return Curtok = gettok();
+}     // Goes to next token 
 enum class Token {
-    tok_eof = -1, tok_def = -2, tok_extern = -3,
-    tok_identifier = -4, tok_number = -5
+    tok_eof = -1, tok_def = -2, tok_extern = -3, tok_identifier = -4, tok_number = -5
 };
-
 inline std::string IdentifierStr;
 inline double NumVal = 0.0;
-
 inline int gettok() {
     static int LastChar = ' ';
     while (std::isspace(static_cast<unsigned char>(LastChar)))
         LastChar = std::getchar();
     if (LastChar == EOF)
         return static_cast<int>(Token::tok_eof);
-
     if (std::isalpha(static_cast<unsigned char>(LastChar)) || LastChar == '_') {
         IdentifierStr.clear();
         do {
@@ -74,13 +71,15 @@ inline int gettok() {
 class ExprAST {
 public:
     virtual ~ExprAST() = default;
-    virtual Value* codegen() = 0;
-};
+    virtual Value* codegen() = 0; };
 // Literals expression class
 class NumberExprAST : public ExprAST {
     double Val;
+
 public:
-    NumberExprAST(const double val) : Val(Val) {}
+    explicit NumberExprAST(double Val)
+        : Val(Val) {
+    }
     Value* codegen() override;
 };
 
@@ -88,7 +87,6 @@ public:
 class BinaryExprAST : public ExprAST {
     char Op;
     std::unique_ptr<ExprAST> LHS, RHS;
-
 public:
     BinaryExprAST(const char Op, std::unique_ptr<ExprAST> LHS,
         std::unique_ptr<ExprAST> RHS)
@@ -96,66 +94,65 @@ public:
     }
     Value* codegen() override;
 };
-//
 // For variable reference
 class VariableExprAST : public ExprAST {
     const std::string Name;
 public:
-    VariableExprAST(const std::string& name) : Name(name) {}
+    explicit VariableExprAST(const std::string& name) : Name(name) {}
     Value* codegen() override;
 };
-// For function call
+class PrototypeAST {
+    std::string Name;
+    std::vector<std::string> Args;
 
-class FunctionExprAST : public ExprAST {
-    const std::string Calee; // I hate how this is spelled, but I don't want to change it now
-    const std::vector<std::unique_ptr<ExprAST>> Args;
 public:
-    // This implements the constructor for the function call expression AST node.
-    // It takes a string; the name of the function called (Calee)
-    // + A vector of unique pointers to ExprAST objects as the arguments to function calls.
-    FunctionExprAST(const std::string& Calee,
-        std::vector<std::unique_ptr<ExprAST>> Args)
-        : Calee(Calee), Args(std::move(Args)) {
+    PrototypeAST(
+        std::string Name,
+        std::vector<std::string> Args
+    )
+        : Name(std::move(Name)),
+        Args(std::move(Args)) {
     }
+
+    const std::string& getName() const {
+        return Name;
+    }
+
+    Function* codegen();
 };
-class PrototypeAST : public ExprAST {
-    const std::string name;
-    const std::vector<std::string> Args; // Initialize with no value b
-public:
-    PrototypeAST(const std::string& name, std::vector<std::string> Args)
-        : name(name), Args(std::move(Args)) {
-    } // Implement prototype constructor 
-// okay sorry , std::move cast argument to an rvalue ( if you remember, is essential non-guarded memory ) reference -> compiler can steal resources all i wants
-};
-class FunctionAST : public ExprAST {
+
+class FunctionAST {
     std::unique_ptr<PrototypeAST> Proto;
     std::unique_ptr<ExprAST> Body;
 public:
-    FunctionAST(std::unique_ptr<PrototypeAST> Proto, std::unique_ptr<ExprAST> Body)
-        : Proto(std::move(Proto)), Body(std::move(Body)) {
-    }
+    FunctionAST(std::unique_ptr<PrototypeAST> Proto,
+                std::unique_ptr<ExprAST> Body
+    )
+        : Proto(std::move(Proto)),
+          Body(std::move(Body)) {}
+    Function* codegen();
 };
-
-    static std::unique_ptr<LLVMContext> TheContext;
-    static std::unique_ptr<IRBuilder> Builder;
-    static std::unique_ptr<Module> TheModule;
-    static std::map<std::string, Value*> NamedValues;
-
+    inline static std::unique_ptr<LLVMContext> TheContext;
+	inline static std::unique_ptr<IRBuilder> Builder; // Add inline function to create a new IRBuilder instance
+    inline static std::unique_ptr<Module> TheModule;
+    inline static std::map<std::string, Value*> NamedValues;
+   
     Value* LogErrorV(const char* str) {
         LogError(str);
         return nullptr;
     }
-
+    //---------------------------------------------------------------------------//
     Value* NumberExprAST::codegen() {
-        ConstantFP::get(*TheContext, APFloat(Val));
+        return ConstantFP::get(*TheContext, APFloat(Val));
     }
-
-    Value* VariablExprAST::codegen() {
-        Value V* = NamedValues[Name];
-        if (!V) {
-            LogErrorV("Unknown variable name");
+    Value* VariableExprAST::codegen() {
+        const auto It = NamedValues.find(Name);
+        // Using NamedValue[Name] creates a new value if not found
+        if (It == NamedValues.end()) {
+            return LogErrorV("Unknown variable name");
         }
-        return V;
+
+        return It->second;
     }
     Value* BinaryExprAST::codegen() {
         Value* L = LHS->codegen();
@@ -163,57 +160,76 @@ public:
         if (!L || !R) {
             return nullptr;
         }
-        Switch(Op) {
+        switch (Op) {
     case '+':
-        return Builder->CreateFAdd(L, R, "addtmp")
+        return Builder->CreateFAdd(L, R, "addtmp");
     case '-':
-        return Builder->CreateFSub(L, R, "addtmp")
+        return Builder->CreateFSub(L, R, "addtmp");
     case '*':
-        return Builder->CreateFMul(L, R, "addtmp")
-    case '<':
+        return Builder->CreateFMul(L, R, "addtmp");
+    case '<': {
         L = Builder->CreateFCmpULT(L, R, "cmptmp");
+    }
         return Builder->CreateUIToFP(L, Type::getDoubleTy(*TheContext), "booltmp");
     default:
         return LogErrorV("Invalid binary operator");
 
         }
-
     }
-    Value* CallExprAST::codegen() {
+
+    //---------------------------------------------------------//
+    class FunctionExprAST : public ExprAST {
+        std::string Callee;
+        std::vector<std::unique_ptr<ExprAST>> Args;
+        public:
+            FunctionExprAST(
+                std::string Callee, std::vector<std::unique_ptr<ExprAST>> Args) : Callee(std::move(Callee)), Args(std::move(Args)) {
+			}
+    };
+
+    Value* FunctionExprAST::codegen() {
         Function* CalleeF = TheModule->getFunction(Callee);
-        if (!CalleeF) {
-            return LogErrorV("Unknown function referenced");
-        }
-        if (CalleeF->arg_size() != Args.size()) {
-            return LogErrorV("Incorrect # Arguments passed");
-        }
-        std::vector<Value*> ArgsV;
-        for (unsigned i = 0; e = Args.size(); i != e; i++) {
-            ArgsV.push_back(Args[i]->codegen());
-            if (!ArgsV.back()) {
-                return nullptr;
-            }
 
-            return Builder->CreateCall(CalleeF, ArgsV, "calltmp");
+        if (!CalleeF)
+            return LogErrorV("Unknown function referenced");
+        if (CalleeF->arg_size() != Args.size())
+            return LogErrorV("Incorrect number of arguments passed");
+        std::vector<Value*> ArgsV;
+        ArgsV.reserve(Args.size());
+        for (const auto& Arg : Args) {
+            Value* ArgValue = Arg->codegen();
+            if (!ArgValue)
+                return nullptr;
+            ArgsV.push_back(ArgValue);
         }
+        return Builder->CreateCall(
+            CalleeF,
+            ArgsV,
+            "calltmp"
+        );
     }
+
 
     Function* PrototypeAST::codegen() {
-        std::vector<Type*> Doubles(Args.size()),
-            Type::getDoublety(*TheContext);
+        std::vector<Type*> Doubles(
+            Args.size()),
+            Type::getDoubleTy(*TheContext)
+            );
         FunctionType* FT =
-            FunctionType::get(Type::getDoublety(*TheContext), Doubles, false);
+            FunctionType::get(Type::getDoubleTy(*TheContext), Doubles, false);
 
         Function* F =
-            Function::Create(FT, Funtion::ExternalLinkage, Name, TheModule::get());
+            Function::Create(FT, Function::ExternalLinkage, Name, TheModule.get());
     }
     unsigned Idx = 0;
     for (auto& Arg : F->args())
         Arg.setName(Args[Idx++]);
     return F;
 
-
-
-
+    Builder->CreateRet(RetVal);
+    if (verifyFunction(*TheFunction, &errs())) {
+        TheFunction->eraseFromParent();
+        return nullptr;
+    }
 #endif 
 
