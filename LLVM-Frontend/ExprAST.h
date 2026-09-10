@@ -20,11 +20,20 @@
 #include "llvm/IR/Module.h"
 #include "llvm/IR/Type.h"
 #include "llvm/IR/Verifier.h"
+#include "parser.h"
+// --------------------------------------------------------------------------------//
 using namespace llvm;
-static int Curtok; // Current token, parser and lexer looks at this
-static int getNextToken() {
+enum class LinearState {
+    v_consumed,
+    v_available
+};
+bool mem_free = false; // Memoryzone to FALSE by default
+inline int Curtok;
+inline int getNextToken() {
+    Curtok = gettok(); // IMPORTANT: 
     return Curtok = gettok();
-}     // Goes to next token 
+}   
+
 enum class Token {
     tok_eof = -1, tok_def = -2, tok_extern = -3, tok_identifier = -4, tok_number = -5
 };
@@ -231,5 +240,23 @@ public:
         TheFunction->eraseFromParent();
         return nullptr;
     }
+FunctioN *Function::codegen() {
+    Function* FunctionAST = TheModule->getFunction(Proto->getName());
+    if (!FunctionAST) {
+        FunctionAST = Proto->codegen(); // procedure
+    }
+    if (!FunctionAST) {
+        return nullptr;
+    }
+	if (!FunctionAST->empty()) {
+		return (LogErrorV("Function cannot be redefined"));
+	}
+
+
+
+
+
+
+
 #endif 
 
