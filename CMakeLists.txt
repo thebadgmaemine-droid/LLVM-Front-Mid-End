@@ -5,7 +5,8 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Configure LLVM (adjust LLVM_DIR if needed)
-set(LLVM_DIR "C:/dev/llvm/build/lib/cmake/llvm")
+set(LLVM_DIR "C:/dev/llvm/build/lib/cmake/llvm" CACHE PATH
+	"Path to the LLVM CMake package")
 find_package(LLVM REQUIRED CONFIG)
 
 message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")

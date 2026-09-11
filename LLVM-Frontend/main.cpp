@@ -1,4 +1,6 @@
-﻿#include "ExprAST.h"
+﻿#include "parser.h"
+
+using namespace llvm_frontend;
 
 int main() {
 	BinopPrecedence['<'] = 10;
