@@ -15,11 +15,15 @@
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/Module.h"
 #include "llvm/IR/Verifier.h"
-
 namespace llvm_frontend {
 
 using namespace llvm;
-
+//---------------------------------------Initialize global---------------------------------------------------------------------//
+inline void InitializeModule() {
+    TheContext = std::make_unique<LLVMContext>();
+    TheModule = std::make_unique<Module>("jit tripped", *TheContext);
+    Builder = std::make_unique<IRBuilder<>>(*TheContext);
+}
 //---------------------------------------LLVM state used during code generation------------------------------------------------//
 inline std::unique_ptr<LLVMContext> TheContext;
 inline std::unique_ptr<IRBuilder<>> Builder;
@@ -82,7 +86,7 @@ public:
     }
 
     Value* codegen() override {
-        Value* L = LHS->codegen();
+        Value* L = LHS->codegen(); // Right hand side, left hand side
         Value* R = RHS->codegen();
         if (!L || !R) {
             return nullptr;
@@ -131,7 +135,7 @@ public:
 
         std::vector<Value*> ArgumentValues;
         for (const auto& Arg : Args) {
-            Value* ArgumentValue = Arg->codegen();
+            Value* ArgumentValue = Arg->codegen(); 
             if (!ArgumentValue) {
                 return nullptr;
             }
@@ -141,7 +145,7 @@ public:
         return Builder->CreateCall(CalleeFunction, ArgumentValues, "calltmp");
     }
 };
-
+/*------------------------------------------------Prototype--------------------------------------*/
 class PrototypeAST {
     std::string Name;
     std::vector<std::string> Args;
@@ -172,7 +176,7 @@ public:
         return FunctionValue;
     }
 };
-
+/*-------------------------------------------------FUNCTION--------------------------------------------------*/
 class FunctionAST {
     std::unique_ptr<PrototypeAST> Proto;
     std::unique_ptr<ExprAST> Body;
@@ -188,7 +192,7 @@ public:
         if (!FunctionValue) {
             FunctionValue = Proto->codegen();
         }
-        if (!FunctionValue || !FunctionValue->empty()) {
+        if (!FunctionValue || !FunctionValue->empty()) { 
             return nullptr;
         }
 
@@ -203,7 +207,7 @@ public:
 
         Value* ReturnValue = Body->codegen();
         if (!ReturnValue) {
-            FunctionValue->eraseFromParent();
+            FunctionValue->eraseFromParent(); // Unlinks from container module and deletes it
             return nullptr;
         }
 
@@ -218,6 +222,6 @@ public:
 };
 
 } // namespace llvm_frontend
-
+// ----------------------------------------------------------------------------------------------------------------//
 #endif // EXPRAST_H_
 

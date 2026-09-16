@@ -12,7 +12,13 @@
 #include <vector>
 
 #include "ExprAST.h"
+// Target 16/9/2026: Reformat comments this way
+// <summary>
+//
+// </summary>
+// <returns></returns>
 
+// keyword: eat::= take in
 namespace llvm_frontend {
 
 enum class Token {
@@ -90,6 +96,56 @@ inline std::unique_ptr<ExprAST> ParseParenExpr() {
     if (Curtok != ')') return LogError("Expected ')' ");
     getNextToken();
     return Value;
+}
+
+inline std::unique_ptr<PrototypeAST> LogErrorP(const char* Message) {
+    LogError(Message);
+    return nullptr;
+}
+// prototype ::= name '(' *id (<- here is kleene star zero, means zero repetition ')' to prevent )) 
+
+inline std::unique_ptr<PrototypeAST> PrototypeParse() {
+    if (Curtok != static_cast<int>(Token::tok_identifier)) {
+        return LogErrorP("Expected function name in prototype");
+    }
+    std::string Fname = IdentifierStr;
+    getNextToken();
+    if (Curtok != '(') return LogErrorP("Expected '(' in prototype");
+    std::vector<std::string> ArgsName;
+    while (getNextToken() == static_cast<int>(Token::tok_identifier)) {
+        ArgsName.push_back(IdentifierStr);
+    
+    }
+    if (Curtok != ')') return LogErrorP("Expected ')' in prototype");
+
+    getNextToken(); // eat the )
+    return std::make_unique<PrototypeAST>(std::move(Fname), std::move(ArgsName));
+     
+}
+// Note: Function here doesn't just mean the procedure or routine, every line is wrapped around an anonymous "function"
+// Define prototype EXPRESSIONS
+inline std::unique_ptr<FunctionAST> DefinitionParse() {
+    getNextToken(); // eat defines and procedures 
+    auto Proto = PrototypeParse();
+    if (!Proto) return nullptr;
+    if (auto Body = ParseExpression()) {
+        return std::make_unique<FunctionAST>(std::move(Proto), std::move(Body));
+    }
+    return nullptr;
+}
+// Define prototype EXTERN
+inline std::unique_ptr<PrototypeAST> ParseExtern() {
+    getNextToken();
+    return PrototypeParse();
+}
+// Anonymous function, as promised
+inline std::unique_ptr<FunctionAST> ParseTopLevelExpr() { // Don't have this as Prototype
+    if (auto E = ParseExpression()) {
+        std::unique_ptr<PrototypeAST> Proto = std::make_unique<PrototypeAST>("__anon_expr"), // note that you should call using types so compiler doesn't have to determine auto, removes the little overhead but may be a problem for debugger
+                                                    std::vector<std::string>()); // 
+        return std::make_unique<FunctionAST>(std::move(Proto), std::move(E));
+    }
+    return nullptr;
 }
 
 inline std::unique_ptr<ExprAST> ParseIdentifierExpr() {
