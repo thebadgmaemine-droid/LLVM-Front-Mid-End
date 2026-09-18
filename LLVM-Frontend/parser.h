@@ -21,12 +21,16 @@
 // keyword: eat::= take in
 namespace llvm_frontend {
 
-enum class Token {
-    tok_eof = -1,
-    tok_def = -2,
-    tok_extern = -3,
-    tok_identifier = -4,
-    tok_number = -5
+    enum class Token {
+        tok_eof = -1,
+        tok_def = -2,
+        tok_extern = -3,
+        tok_identifier = -4,
+        tok_number = -5,
+        tok_if = -6,
+        tok_then = -7,
+        tok_else = -8,
+        tok_for = -9
 };
 
 inline std::string IdentifierStr;
@@ -46,10 +50,18 @@ inline int gettok() {
             IdentifierStr += static_cast<char>(LastChar);
             LastChar = std::getchar();
         } while (std::isalnum(static_cast<unsigned char>(LastChar)) || LastChar == '_');
-        if (IdentifierStr == "DEFINE" || IdentifierStr == "PROCEDURE")
+        if (IdentifierStr == "def" || IdentifierStr == "procedure")
             return static_cast<int>(Token::tok_def);
-        if (IdentifierStr == "EXTERN")
+        if (IdentifierStr == "ext")
             return static_cast<int>(Token::tok_extern);
+        if (IdentifierStr == "if")
+            return static_cast<int>(Token::tok_if);
+        if (IdentifierStr == "for")
+            return static_cast<int>(Token::tok_for);
+        if (IdentifierStr == "else")
+            return static_cast<int>(Token::tok_else);
+        if (IdentifierStr == "then")
+            return static_cast<int>(Token::tok_then);
         return static_cast<int>(Token::tok_identifier);
     }
     if (std::isdigit(static_cast<unsigned char>(LastChar)) || LastChar == '.') {
@@ -141,11 +153,53 @@ inline std::unique_ptr<PrototypeAST> ParseExtern() {
 // Anonymous function, as promised
 inline std::unique_ptr<FunctionAST> ParseTopLevelExpr() { // Don't have this as Prototype
     if (auto E = ParseExpression()) {
-        std::unique_ptr<PrototypeAST> Proto = std::make_unique<PrototypeAST>("__anon_expr"), // note that you should call using types so compiler doesn't have to determine auto, removes the little overhead but may be a problem for debugger
-                                                    std::vector<std::string>()); // 
+        std::unique_ptr<PrototypeAST> Proto = std::make_unique<PrototypeAST>("__anon_expr", std::vector<std::string>()); // note that you should call using types so compiler doesn't have to determine auto, removes the little overhead but may be a problem for debugger
         return std::make_unique<FunctionAST>(std::move(Proto), std::move(E));
     }
     return nullptr;
+}
+// Block parser
+inline std::unique_ptr<ExprAST> ParseBlock() {
+    std::vector<std::unique_ptr<ExprAST>> Body;
+    while (Curtok != static_castA<int>(Token::tok_else)) {
+        auto Expr = ParseExpression();
+        if (!Expr) {
+            Body.push_back(std::move(Expr));
+        }
+        if (Curtok == ';') {
+            getNextToken();
+        }
+        else {
+            break;
+        }
+    }
+    return std::make_unique<BlockExprAST>(std::move(Body)); // I have no idea why its saying overloaded logged 18/9/2026
+    
+    getNextToken();
+    
+}
+// If/else/denn parser
+inline std::unique_ptr<ExprAST> ParseIfExpr() {
+    getNextToken(); // eat if
+
+    auto Cond = ParseExpression();
+    if (!Cond) return nullptr;
+
+    if (Curtok != static_cast<int>(Token::tok_then))
+        return LogError("Expected 'then'");
+    getNextToken(); // eat then
+
+    auto Then = ParseBlock(); // stops at tok_else
+    if (!Then) return nullptr;
+
+    if (Curtok != static_cast<int>(Token::tok_else))
+        return LogError("Expected 'else'");
+    getNextToken(); // eat 'else'
+
+    auto Else = ParseBlock(); // <-- still stops at tok_else, which is wrong here
+    if (!Else) return nullptr;
+
+    return std::make_unique<IfExprAST>(std::move(Cond), std::move(Then), std::move(Else));
 }
 
 inline std::unique_ptr<ExprAST> ParseIdentifierExpr() {
@@ -176,6 +230,7 @@ inline std::unique_ptr<ExprAST> ParsePrimary() {
     case static_cast<int>(Token::tok_identifier): return ParseIdentifierExpr();
     case static_cast<int>(Token::tok_number): return ParseNumberExpr();
     case '(': return ParseParenExpr();
+    case static_cast<int>(Token::tok_if): return ParseifAST();
     }
 }
 

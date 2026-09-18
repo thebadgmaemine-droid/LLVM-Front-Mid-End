@@ -6,7 +6,7 @@
 #include <string>
 #include <utility>
 #include <vector>
-
+// REMINDER THAT LLVM IS HERE FOR DEMO CHECKS, FINAL BACKEND IS WRITTEN IN ASSEMBLY
 #include "llvm/ADT/APFloat.h"
 #include "llvm/IR/BasicBlock.h"
 #include "llvm/IR/Constants.h"
@@ -15,15 +15,10 @@
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/Module.h"
 #include "llvm/IR/Verifier.h"
+// REMINDER THAT LLVM IS HERE FOR DEMO CHECKS, FINAL BACKEND IS WRITTEN IN ASSEMBLY
 namespace llvm_frontend {
 
 using namespace llvm;
-//---------------------------------------Initialize global---------------------------------------------------------------------//
-inline void InitializeModule() {
-    TheContext = std::make_unique<LLVMContext>();
-    TheModule = std::make_unique<Module>("jit tripped", *TheContext);
-    Builder = std::make_unique<IRBuilder<>>(*TheContext);
-}
 //---------------------------------------LLVM state used during code generation------------------------------------------------//
 inline std::unique_ptr<LLVMContext> TheContext;
 inline std::unique_ptr<IRBuilder<>> Builder;
@@ -31,7 +26,7 @@ inline std::unique_ptr<Module> TheModule;
 inline std::map<std::string, Value*> NamedValues;
 //----------------------------------------Error logging------------------------------------------------------------------------//
 inline Value* LogErrorV(const char* Message) {
-    errs() << "Error: " << Message << '\n';
+    errs() << "Error: " << Message << '\n'; // errs make sure stdout is flushed before stderr
     return nullptr;
 }
 //---------------------------------------Abstract Syntax Tree class declaration------------------------------------------------//
@@ -41,7 +36,44 @@ public:
     virtual Value* codegen() = 0; // Codegen() is passed as a virtual function. Value* refers to the POINTER to the OPERANDS used.  
 };
 
+// If expression class
+class IfAST : public ExprAST {
+    std::unique_ptr<ExprAST> Cond, Then, Else;
+public:
+    IfAST(std::unique_ptr<ExprAST> Cond, std::unique_ptr<ExprAST> Then,
+          std::unique_ptr<ExprAST> Else)
+        : Cond(std::move(Cond)), Then(std::move(Then)), Else(std::move(Else)) {}
+
+    Value* codegen() override {
+        // TODO: Implement proper codegen for if expressions.
+        return nullptr;
+    }
+};
+
+class BlockExprAST : ExprAST {
+    std::vector<std::unique_ptr<ExprAST>> Body;
+    public:
+        explicit BlockExprAST(std::vector<std::unique_ptr<ExprAST>> Body)
+            : Body(std::move(Body)) {
+
+        }
+        Value* codegen() override {
+            Value* Last = nullptr;
+            for (auto& E : Body) {
+                Last = E->codegen();
+                if (!Last) {
+                    return nullptr;
+                }
+                return Last;
+            }
+        };
+
+};
+
+
+
 // Numeric literals expression class
+
 class NumberExprAST : public ExprAST {
     double Val;
 

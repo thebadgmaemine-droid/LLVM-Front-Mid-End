@@ -3,6 +3,14 @@
 #include "types.h" // Empty for now
 using namespace llvm;
 using namespace llvm_frontend;
+
+// Initialize globals
+inline void InitializeModule() {
+    TheContext = std::make_unique<LLVMContext>();
+    TheModule = std::make_unique<Module>("jit tripped", *TheContext);
+    Builder = std::make_unique<IRBuilder<>>(*TheContext);
+}
+
 static void HandleDefinition() {
     if (auto FnAST = DefinitionParse()) {
         if (auto* IR = FnAST->codegen()) {
@@ -56,6 +64,7 @@ int main() {
     BinopPrecedence['*'] = 40;
 
     fprintf(stderr, "ready> ");
+    InitializeModule();
     getNextToken();
     InitializeModule();
     MainLoop();
