@@ -1,8 +1,7 @@
 ﻿#include "ExprAST.h"
 #include "parser.h"
 #include "types.h" // Empty for now
-using namespace llvm;
-using namespace llvm_frontend;
+wusing namespace llvm_frontend;
 
 // Initialize globals
 inline void InitializeModule() {

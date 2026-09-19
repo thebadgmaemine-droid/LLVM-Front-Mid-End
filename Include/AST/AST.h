@@ -19,11 +19,6 @@
 namespace llvm_frontend {
 
 using namespace llvm;
-//---------------------------------------LLVM state used during code generation------------------------------------------------//
-inline std::unique_ptr<LLVMContext> TheContext;
-inline std::unique_ptr<IRBuilder<>> Builder;
-inline std::unique_ptr<Module> TheModule;
-inline std::map<std::string, Value*> NamedValues;
 //----------------------------------------Error logging------------------------------------------------------------------------//
 inline Value* LogErrorV(const char* Message) {
     errs() << "Error: " << Message << '\n'; // errs make sure stdout is flushed before stderr
@@ -37,10 +32,10 @@ public:
 };
 
 // If expression class
-class IfAST : public ExprAST {
+class IfExprAST : public ExprAST {
     std::unique_ptr<ExprAST> Cond, Then, Else;
 public:
-    IfAST(std::unique_ptr<ExprAST> Cond, std::unique_ptr<ExprAST> Then,
+    IfExprAST(std::unique_ptr<ExprAST> Cond, std::unique_ptr<ExprAST> Then,
           std::unique_ptr<ExprAST> Else)
         : Cond(std::move(Cond)), Then(std::move(Then)), Else(std::move(Else)) {}
 
